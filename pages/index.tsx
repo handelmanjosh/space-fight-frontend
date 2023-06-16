@@ -38,7 +38,99 @@ export default function Home() {
   const [trophiesWon, setTrophiesWon] = useState<number>(0);
   const [showTrophiesWon, setShowTrophiesWon] = useState<boolean>(false);
   const [myNfts, setMyNfts] = useState<{ address: string, image: string, click: () => any; }[]>([]);
+  const [offChainKey, setOffChainKey] = useState<string>("");
+  const [changedKey, setChangedKey] = useState<string>("");
 
+  useEffect(() => {
+    if (socket) {
+      console.log(`Loaded off chain key: ${offChainKey}`);
+      socket?.emit("recieveOffChainKey", offChainKey);
+      socket?.emit("getOffChainData", offChainKey);
+    }
+  }, [offChainKey]);
+  useEffect(() => {
+    if (!publicKey) {
+      //hacky hacky...
+      setOffChainKey(offChainKey => {
+        socket.emit("getOffChainKey", offChainKey);
+        return offChainKey;
+      });
+    }
+  }, [isPlaying, publicKey]);
+  const processOffChainData = (user: any) => {
+    console.log("recieved off chain data");
+    console.log(user);
+    if (user) {
+      console.log(user);
+      setTotalMass(user.mass);
+      setTotalTrophies(user.trophies);
+      const myTokens = [
+        {
+          name: "SpeedPowerUp", num: user.speedPowerUp, use: () => {
+            socket.emit("transaction", "SpeedPowerUp");
+            let count = loadedPowerUps.get("SpeedPowerUp");
+            if (count) {
+              loadedPowerUps.set("SpeedPowerUp", count + 1);
+            } else {
+              loadedPowerUps.set("SpeedPowerUp", 1);
+            }
+            const newTokens = [...myTokens];
+            const index = newTokens.findIndex((value) => value.name === "SpeedPowerUp");
+            newTokens[index].num--;
+            setMyTokens(newTokens);
+          }
+        },
+        {
+          name: "SizePowerUp", num: user.sizePowerUp, use: () => {
+            socket.emit("transaction", "SizePowerUp");
+            let count = loadedPowerUps.get("SizePowerUp");
+            if (count) {
+              loadedPowerUps.set("SizePowerUp", count + 1);
+            } else {
+              loadedPowerUps.set("SizePowerUp", 1);
+            }
+            const newTokens = [...myTokens];
+            const index = newTokens.findIndex((value) => value.name === "SizePowerUp");
+            newTokens[index].num--;
+            setMyTokens(newTokens);
+          }
+        },
+        {
+          name: "Recombine", num: user.recombinePowerUp, use: () => {
+            socket.emit("transaction", "Recombine");
+            let count = loadedPowerUps.get("Recombine");
+            if (count) {
+              loadedPowerUps.set("Recombine", count + 1);
+            } else {
+              loadedPowerUps.set("Recombine", 1);
+            }
+            const newTokens = [...myTokens];
+            const index = newTokens.findIndex((value) => value.name === "Recombine");
+            newTokens[index].num--;
+            setMyTokens(newTokens);
+          }
+        },
+        {
+          name: "PlaceVirus", num: user.placeVirusPowerUp, use: () => {
+            socket.emit("transaction", "PlaceVirus");
+            let count = loadedPowerUps.get("PlaceVirus");
+            if (count) {
+              loadedPowerUps.set("PlaceVirus", count + 1);
+            } else {
+              loadedPowerUps.set("PlaceVirus", 1);
+            }
+            const newTokens = [...myTokens];
+            const index = newTokens.findIndex((value) => value.name === "PlaceVirus");
+            newTokens[index].num--;
+            setMyTokens(newTokens);
+          }
+        }
+      ];
+      setMyTokens(myTokens);
+    } else {
+      setMyTokens([]);
+    }
+  };
   useEffect(() => {
     if (publicKey) {
       getMyTokens(publicKey.toBase58()).then(tokens => {
@@ -97,8 +189,12 @@ export default function Home() {
       getMyTrophies(publicKey).then(trophies => {
         setTotalTrophies(trophies);
       });
+    } else if (offChainKey !== "") {
+      if (socket) {
+        socket.emit("getOffChainData", offChainKey);
+      }
     }
-  }, [publicKey, isPlaying]);
+  }, [publicKey, isPlaying, offChainKey]);
   useEffect(() => {
     console.log(`My Wallet address: ${publicKey?.toBase58()}`);
     canvas = document.getElementById("game-canvas") as HTMLCanvasElement;
@@ -157,6 +253,7 @@ export default function Home() {
         return prevMass + Math.floor(increase);
       });
     });
+    socket.on("getOffChainData", processOffChainData);
     const sendMouse = setInterval(sendMousePos, 1000 / 60);
     return () => {
       socket.disconnect();
@@ -373,6 +470,7 @@ export default function Home() {
       <div className="flex flex-row justify-between items-center w-full p-4">
         <h1 className="text-center text-5xl font-bold text-transparent bg-clip-text p-1 bg-gradient-to-tr from-[#9945FF] to-[#14F195]">Agar.sol</h1>
         <div className="flex flex-row justify-center items-center gap-4">
+          <a className="text-lg font-bold hover:underline hover:cursor-pointer" onClick={() => window.location.href = "/load-wallet"}>Claim</a>
           <a className="text-lg font-bold hover:underline hover:cursor-pointer" onClick={() => window.location.href = "/how-to-play"}>How to play?</a>
           <a className="text-lg font-bold hover:underline hover:cursor-pointer" onClick={() => window.location.href = "/shop"}>Shop</a>
           <WalletMultiButtonDynamic />
@@ -387,7 +485,28 @@ export default function Home() {
       <div className="flex flex-col flex-grow justify-center items-center gap-4">
         <div className="flex flex-row justify-center items-center gap-6">
           <div className="flex flex-col justify-center items-center gap-4">
-            {publicKey ? <></> : <p className="text-xl">Connect a wallet to claim your web3 rewards!</p>}
+            {publicKey || offChainKey !== "" ? <></> :
+              <div className="flex flex-col justify-center items-center gap-2">
+                <p className="text-xl text-center">Enter a phrase to save your data or load previous data</p>
+                <input
+                  className="appearance-none outline-none border bg-black border-white rounded-lg w-96 p-4"
+                  onChange={(event: any) => setChangedKey(event.target.value)}
+                  value={changedKey}
+                  placeholder="Enter a phrase to save your data"
+                />
+                <button
+                  className="py-2 px-4 rounded-md bg-yellow-500  hover:brightness-90 active:brightness-75"
+                  onClick={() => {
+                    setOffChainKey(changedKey);
+                    setChangedKey("");
+                  }}
+                >
+                  Set
+                </button>
+                <p>If you create a web3 wallet, {`you'll`} be able to load your items into the wallet!</p>
+              </div>
+            }
+            {offChainKey === "" ? <></> : <p className="text-xl text-center">{`Signed in as `}<span className="font-bold underline">{`${offChainKey}`}</span></p>}
             <div className="relative w-auto h-auto border-2 border-white rounded-lg ">
               <canvas id="game-canvas" className="bg-transparent" />
               {!isPlaying ?
