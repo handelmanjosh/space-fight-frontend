@@ -235,7 +235,7 @@ export default function Home() {
     if (socket) {
       socket.disconnect();
     }
-    socket = io("http://localhost:3005", {
+    socket = io(process.env.NEXT_PUBLIC_BACKEND_URL!, {
       autoConnect: false
     });
     socket.connect();
