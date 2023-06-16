@@ -1,7 +1,8 @@
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, getMint, getAccount, transfer, Account } from "@solana/spl-token";
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, clusterApiUrl } from "@solana/web3.js";
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, getMint, getAccount, transfer, Account, createTransferInstruction, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction, clusterApiUrl } from "@solana/web3.js";
 import { formatWithOptions } from "util";
-import { getNameByAddress } from "./utils";
+import { getAddressByName, getNameByAddress } from "./utils";
+import { SignerWalletAdapterProps } from "@solana/wallet-adapter-base";
 
 //to make sure we don't lose the token addresses. These are all devnet tokens
 // NEXT_PUBLIC_MASS_TOKEN="3wrcCKWMqaQanNf6E3h9oxCYeH5nrFBW3nNuyowZK4ec"
@@ -91,7 +92,26 @@ export async function sendToken(mint: string, address: string, amount: number) {
 export async function recieveToken(address: string) {
 
 }
+export async function sendTrophies(publicKey: PublicKey, amount: number) {
+  await sendToken(process.env.NEXT_PUBLIC_TROPHY_TOKEN!, publicKey.toBase58(), amount);
+}
+export async function getMyTrophies(publicKey: PublicKey) {
 
+  // Fetch account info
+  const accountInfo = await connection.getParsedTokenAccountsByOwner(publicKey, {
+    programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), // SPL Token program id
+  });
+  let result = 0;
+  accountInfo.value.forEach((account) => {
+    const token = account.account.data.parsed.info.tokenAmount.amount;
+    const mint = account.account.data.parsed.info.mint;
+    console.log(mint, process.env.NEXT_PUBLIC_TROPHY_TOKEN);
+    if (String(mint) === String(process.env.NEXT_PUBLIC_TROPHY_TOKEN)) {
+      result = token / LAMPORTS_PER_SOL;
+    }
+  });
+  return result;
+}
 export async function getMyTokens(address: string): Promise<[string, number][]> {
   const publicKey = new PublicKey(address);
 
@@ -133,3 +153,54 @@ export async function getMassTokens(address: string): Promise<number> {
   });
   return total;
 }
+
+
+export async function swapTokens(tokenName: string, userAddress: string, amount: number, signTransaction: (...any: any[]) => any) {
+  const tokenAddress = getAddressByName(tokenName) || process.env.NEXT_PUBLIC_MASS_TOKEN! || "";
+  const recipient = Keypair.fromSecretKey(new Uint8Array(privateKey));
+  const mintToken = new PublicKey(tokenAddress);
+  const recipientAddress = recipient.publicKey;
+  const publicKey = new PublicKey(userAddress);
+  const transactionInstructions: TransactionInstruction[] = [];
+  const associatedTokenFrom = await getAssociatedTokenAddress(
+    mintToken,
+    publicKey
+  );
+  const fromAccount = await getAccount(connection, associatedTokenFrom);
+  const associatedTokenTo = await getAssociatedTokenAddress(mintToken, recipientAddress);
+  transactionInstructions.push(
+    createTransferInstruction(
+      fromAccount.address, // source
+      associatedTokenTo, // dest
+      publicKey,
+      amount * LAMPORTS_PER_SOL // transfer 1 USDC, USDC on solana devnet has 6 decimal
+    )
+  );
+  const transaction = new Transaction().add(...transactionInstructions);
+  const signature = await configureAndSendCurrentTransaction(
+    transaction,
+    connection,
+    publicKey,
+    signTransaction
+  );
+  console.log(`Signature: ${signature}`);
+}
+
+export const configureAndSendCurrentTransaction = async (
+  transaction: Transaction,
+  connection: Connection,
+  feePayer: PublicKey,
+  signTransaction: SignerWalletAdapterProps['signTransaction']
+) => {
+  const blockHash = await connection.getLatestBlockhash();
+  transaction.feePayer = feePayer;
+  transaction.recentBlockhash = blockHash.blockhash;
+  const signed = await signTransaction(transaction);
+  const signature = await connection.sendRawTransaction(signed.serialize());
+  await connection.confirmTransaction({
+    blockhash: blockHash.blockhash,
+    lastValidBlockHeight: blockHash.lastValidBlockHeight,
+    signature
+  });
+  return signature;
+};
