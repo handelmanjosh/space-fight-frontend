@@ -40,6 +40,15 @@ export default function Home() {
   const [myNfts, setMyNfts] = useState<{ address: string, image: string, click: () => any; }[]>([]);
   const [offChainKey, setOffChainKey] = useState<string>("");
   const [changedKey, setChangedKey] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [finalUsername, setFinalUsername] = useState<string>("");
+  const uploadUsername = () => {
+    if (socket) {
+      socket.emit("username", username);
+      setFinalUsername(username);
+    }
+    setUsername("");
+  };
 
   useEffect(() => {
     if (socket) {
@@ -193,6 +202,8 @@ export default function Home() {
       if (socket) {
         socket.emit("getOffChainData", offChainKey);
       }
+    } else {
+      setMyTokens([]);
     }
   }, [publicKey, isPlaying, offChainKey]);
   useEffect(() => {
@@ -352,6 +363,13 @@ export default function Home() {
     context.arc(0, 0, player.radius, 0, 2 * Math.PI);
     context.fillStyle = player.color;
     context.fill();
+    if (player.name) {
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "white";
+      context.font = '15px Arial';
+      context.fillText(player.name, 0, 0);
+    }
     context.restore();
   };
   const drawOtherPlayer = (object: any, player: { x: number, y: number; },) => {
@@ -365,6 +383,14 @@ export default function Home() {
       context.arc(0, 0, player.radius, 0, 2 * Math.PI);
       context.fillStyle = player.color;
       context.fill();
+      if (player.name) {
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillStyle = "white";
+        context.font = '15px Arial';
+
+        context.fillText(player.name, 0, 0);
+      }
       context.restore();
     });
   };
@@ -404,8 +430,15 @@ export default function Home() {
       context.arc(0, 0, object.radius, 0, 2 * Math.PI);
       context.fill();
     }
+    if (object.name) {
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillStyle = "white";
+      context.font = '15px Arial';
 
+      context.fillText(object.name, 0, 0);
 
+    }
     context.restore();
   };
   const updateLeaderboard = (leaderboard: any) => {
@@ -632,6 +665,23 @@ export default function Home() {
           }
         </div>
       </div>
+      {finalUsername !== "" ?
+        <p className="text-center text-2xl">
+          {`Your username is `}<span className="font-bold">{`${finalUsername}`}</span>
+        </p>
+        :
+        <div className="flex flex-col justify-center items-center gap-4">
+          <p>Name yourself!</p>
+          <input
+            type="text"
+            onChange={(event: any) => setUsername(event.target.value)}
+            value={username}
+            className="appearance-none outline-none border bg-black border-white rounded-lg w-96 p-4"
+            placeholder="Enter a username"
+          />
+          <button onClick={uploadUsername} className="py-2 px-8 rounded-lg bg-yellow-500 hover:brightness-90 active:brightness-75">Set</button>
+        </div>
+      }
     </div >
   );
 }

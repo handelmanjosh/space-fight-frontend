@@ -1,6 +1,5 @@
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, getMint, getAccount, transfer, Account, createTransferInstruction, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction, clusterApiUrl } from "@solana/web3.js";
-import { formatWithOptions } from "util";
 import { getAddressByName, getNameByAddress } from "./utils";
 import { SignerWalletAdapterProps } from "@solana/wallet-adapter-base";
 
