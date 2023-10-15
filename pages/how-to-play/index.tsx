@@ -1,69 +1,63 @@
-import dynamic from 'next/dynamic';
+import BasicButton from "@/components/BasicButton";
 
-const WalletDisconnectButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-react-ui')).WalletDisconnectButton,
-    { ssr: false }
-);
-const WalletMultiButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
-    { ssr: false }
-);
-export default function HowToPlay() {
+const HowToPlayPage = () => {
     return (
-        <div className="w-full h-full flex flex-col justify-start items-center">
-            <div className="flex flex-row justify-between items-center w-full p-4">
-                <h1 className="text-center text-5xl font-bold text-transparent bg-clip-text p-1 bg-gradient-to-tr from-[#9945FF] to-[#14F195]">Agar.sol</h1>
-                <div className="flex flex-row justify-center items-center gap-4">
-                    <a className="text-lg font-bold hover:underline hover:cursor-pointer" onClick={() => window.location.href = "/"}>Play now!</a>
-                    <WalletMultiButtonDynamic />
-                    <WalletDisconnectButtonDynamic />
-                </div>
+        <div className="p-4 bg-gray-800 text-white min-h-screen w-screen">
+            <div className="flex flex-row justify-start items-center gap-2 mb-4">
+                <BasicButton onClick={() => window.location.href = "/"} text="Play" />
+                <BasicButton onClick={() => window.location.href = "/shop"} text="Shop" />
             </div>
-            <div className="flex flex-col justify-start overflow-y-auto items-center gap-4">
-                <StyledTextBlock title="How do I play?">
-                    Move your mouse to move your cell! Eat other cells by covering them.
-                </StyledTextBlock>
-                <StyledTextBlock title="Where's the web3 integration?">
-                    All items in this game are tokens on solana! You can buy and sell them using your solana wallet.
-                </StyledTextBlock>
-                <StyledTextBlock title="How can I set up a Solana wallet?">
-                    Visit <a href="https://phantom.app/" className="underline bg-clip-text p-1 hover:text-orange-500 hover:cursor-pointer">phantom.app</a> to set up a wallet.
-                </StyledTextBlock>
-                <StyledTextBlock title="How do I earn $MASS?">
-                    You earn $MASS by eating and growing your cell
-                </StyledTextBlock>
-                <StyledTextBlock title="How do I earn power up tokens?">
-                    You earn power up tokens by collecting power ups in game!
-                </StyledTextBlock>
-                <StyledTextBlock title="How do I earn $TROPHY?">
-                    You earn $TROPHY by rising to the top of the leaderboard!
-                </StyledTextBlock>
-                <StyledTextBlock title="How can I use $MASS?">
-                    You can use $MASS to buy powerups, which can be used to help you grow faster!
-                </StyledTextBlock>
-                <StyledTextBlock title="How can I use my powerups?">
-                    Click on your powerups to move them to your in game wallet! {`They'll then be usable in game`}
-                </StyledTextBlock>
-                <StyledTextBlock title="How can I use $TROPHY?">
-                    You can us $TROPHY to buy NFT skins, which will be completely unique to you!
-                </StyledTextBlock>
-                <StyledTextBlock title="Can I trade items on secondary marketplaces?">
-                    Of course! Swaps for all game tokens will be set up shortly.
-                </StyledTextBlock>
-            </div>
+            <h1 className="text-3xl font-bold mb-6">How to Play</h1>
+            <section className="mb-4">
+                <h2 className="text-2xl font-semibold mb-2">Controlling the Spaceship</h2>
+                <p>Move your spaceship by moving your mouse. The spaceship will follow the direction of the cursor.</p>
+                <p>Press G to grapple onto nearby asteroids, rapidly changing direction</p>
+                <p>Make sure not to hit the asteroids, as {`you'll`} die!</p>
+            </section>
+            <section className="mb-4">
+                <h2 className="text-2xl font-semibold mb-2">Power-ups</h2>
+                <p>Use the keys <span className="font-bold">Z</span>, <span className="font-bold">X</span>, <span className="font-bold">C</span>, <span className="font-bold">V</span>, and <span className="font-bold">B</span> or click on the power-up icon to activate the following power-ups sequentially:</p>
+                <ul className="list-disc pl-6">
+                    <li>Health</li>
+                    <li>Heavy Bullet</li>
+                    <li>Fast Bullet</li>
+                    <li>Speed</li>
+                    <li>Machine Bullet</li>
+                </ul>
+            </section>
+            <section className="mb-4">
+                <h2 className="text-2xl font-semibold mb-2">Earning NFTs</h2>
+                <p>{`On your first play, you'll mint an NFT representing your spaceship. This NFT can be upgraded with tokens you collect in-game.`}</p>
+            </section>
+            <section className="mb-4">
+                <h2 className="text-2xl font-semibold mb-2">Collecting Cash and Trophies</h2>
+                <p>Earn cash by staying alive, collecting pop-ups in the game, and destroying asteroids. Collect trophies to upgrade your character and receive extra bonuses such as extended power-up durations and additional points and trophies from gameplay.</p>
+            </section>
+            <section className="mb-4">
+                <h2 className="text-2xl font-semibold mb-2">Power-up Tokens</h2>
+                <p>Every power-up in the game represents a token. These can either be collected during gameplay or purchased in the in-game shop using cash.</p>
+            </section>
+            <section>
+                <h2 className="text-2xl font-semibold mb-2">Level Up Your NFT</h2>
+                <p>{`As you destroy more players, your spaceship's NFT will level up and change color, representing your increasing prowess in the game`}.</p>
+                <p>{`As you level up, you'll unlock class upgrades to supercharge your spaceship`}</p>
+                <ul className="list-disc pl-6">
+                    <li>MultiShot - Double the shots, double the destruction</li>
+                    <li>TripleShot - Cover the area with a rain of bullets</li>
+                    <li>{`Shoot backwards and forwards so you're never caught off guard`}</li>
+                </ul>
+                <p>More class upgrades coming soon...</p>
+            </section>
+            <section>
+                <h2 className="text-2xl font-semibold mb-2">Gamemodes</h2>
+                <ul className="list-disc pl-6">
+                    <li>Casual - Pay a fee of SOL to play against AI only</li>
+                    <li>Normal - the normal game. Play against your friends or the AI</li>
+                    <li>Competitive - Pay SOL to play, earn SOL when killing other players {`No AI opponents in competitive`}</li>
+                </ul>
+            </section>
         </div>
     );
-}
+};
 
-function StyledTextBlock({ title, children }: { title: string, children: React.ReactNode; }) {
-    return (
-        <div className="flex justify-center items-center w-[80%] bg-gray-800 rounded-lg">
-            <div className="flex flex-col justify-start items-center gap-2 p-4 w-full">
-                <div className="flex flex-row justify-start items-center w-full">
-                    <p className="text-5xl font-semibold text-center text-transparent bg-clip-text p-1 bg-gradient-to-tr from-pink-600 to-yellow-400">{title}</p>
-                </div>
-                <p className="text-center text-3xl font-medium">{children}</p>
-            </div>
-        </div>
-    );
-}
+export default HowToPlayPage;
