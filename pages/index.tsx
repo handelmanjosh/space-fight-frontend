@@ -29,7 +29,7 @@ const powerUpLongNames = ["Health", "Heavy Bullet", "Fast Bullet", "Speed", "Mac
 const powerUpKeys = ["z", "x", "c", "v", "b"];
 
 const gamemodes = ["casual", "normal", "competitive"];
-
+const betTypes = ["Next Death", "Next Kill"];
 export default function SpaceFightPage() {
   const { publicKey, connected, signTransaction } = useWallet();
   //const [publicKey, setPublicKey] = useState<string>("");
@@ -51,6 +51,10 @@ export default function SpaceFightPage() {
   const [canSpectate, setCanSpectate] = useState<boolean>(false);
   const [loadingMessage, setLoadingMessage] = useState<string>("");
   const [selectedGamemode, setSelectedGamemode] = useState<number>(1);
+  const [placingBounty, setPlacingBounty] = useState<boolean>(false);
+  const [target, setTarget] = useState<string>("");
+  const [bountyAmount, setBountyAmount] = useState<number>(0.1);
+  const [bounties, setBounties] = useState<[string, number][]>([]);
   useEffect(() => {
     canvas = document.getElementById("gameField") as HTMLCanvasElement;
     context = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -125,6 +129,7 @@ export default function SpaceFightPage() {
       socket.on("recieveLeaderboard", recieveLeaderboard);
       socket.on("recieveMessages", recieveMessages);
       socket.on("recieveMainMessage", recieveMainMessage);
+      socket.on("recieveBounties", recieveBounties);
       return () => {
         socket.disconnect();
         document.removeEventListener("mousemove", mousemove);
@@ -137,9 +142,13 @@ export default function SpaceFightPage() {
         socket.off("recieveLeaderboard", recieveLeaderboard);
         socket.off("recieveMessages", recieveMessages);
         socket.off("recieveMainMessage", recieveMainMessage);
+        socket.off("recieveBounties", recieveBounties);
       };
     }
   }, [publicKey, connected]);
+  const recieveBounties = (bounties: [string, number][]) => {
+    setBounties(bounties);
+  };
   const recieveMessages = (messages: string[][]) => {
     if (messages) {
       setGameMessages(messages);
@@ -413,11 +422,20 @@ export default function SpaceFightPage() {
   const onSelectNft = (n: NFTMetadata & { nft: string; }) => {
     setSelectedNFT(n);
   };
+  const createBounty = async () => {
+    if (publicKey && signTransaction && target !== "" && bountyAmount > 0) {
+      await swapSOL(publicKey.toString(), bountyAmount, signTransaction);
+      socket.emit("createBounty", { address: pubkey, target, amount: bountyAmount });
+      setPlacingBounty(false);
+      setTarget("");
+      setBountyAmount(0.1);
+    }
+  };
   return (
     <div className="flex flex-col justify-center items-center w-screen h-screen">
       <div className="relative w-full h-full flex" style={{ userSelect: "none" }}>
         <canvas id="gameField" />
-        {leaderboard ?
+        {leaderboard &&
           <div id="leaderboard" className="absolute top-0 right-0 m-4 w-[20%] h-auto bg-gray-800/60 rounded-lg p-4">
             {leaderboard.map((value: { address: string, points: number; }, i: number) => {
               return (
@@ -436,10 +454,24 @@ export default function SpaceFightPage() {
                 <></>
             }
           </div>
-          :
-          <></>
         }
-
+        {bounties && bounties.length > 0 &&
+          <div className="absolute top-0 left-0 w-full justify-center items-center m-2">
+            <div className="gap-1 flex flex-row justify-center items-center">
+              <div className="flex flex-col justify-center items-center gap-2 rounded-md bg-slate-700/75 p-4">
+                <p style={{ userSelect: "none" }}>{"Bounties"}</p>
+                {bounties.map((value: [string, number], i: number) => {
+                  return (
+                    <p key={i} style={{ userSelect: "none" }}>
+                      <span className="text-red-600 font-bold">{`${shortenAddress(value[0])}`}</span>
+                      {` - ${value[1]} SOL`}
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        }
         {message !== "" ?
           <div id="message" className="absolute top-0 left-0 w-full h-full">
             <div className="w-[80%] md:w-[50%] h-auto text-center text-xl">
@@ -486,6 +518,7 @@ export default function SpaceFightPage() {
               <div className="flex flex-row justify-center items-center gap-2">
                 <BasicButton text="Shop" onClick={() => window.location.href = "/shop"} />
                 <BasicButton onClick={() => window.location.href = "/how-to-play"} text="How to Play" />
+                <BasicButton onClick={() => window.location.href = "/create"} text="Create NFT" />
               </div>
               <div className="flex flex-row justify-center items-center gap-2">
                 <WalletMultiButtonDynamic />
@@ -558,9 +591,42 @@ export default function SpaceFightPage() {
                 </button>
               </div>
             </div>
-            <div className="absolute flex flex-row items-center justify-center w-full top-0 left-0 text-center m-2">
+            <div className="absolute flex flex-row items-center justify-center top-0 left-0 text-center m-2">
               <p>{`Spectating ${spectatingAddress}`}</p>
             </div>
+            <div className="absolute w-full flex flex-row justify-center items-center bottom-0 left-0">
+              <BasicButton onClick={() => setPlacingBounty(true)} text="Create Bounty" />
+            </div>
+            {placingBounty &&
+              <div className="absolute w-full h-full top-0 left-0 flex flex-row justify-center items-center">
+                <div className="w-auto h-auto p-4 gap-2 bg-gray-600/60 rounded-md flex flex-col justify-center items-center">
+                  <p>{`Bounty target: ${target}`}</p>
+                  <ul className="flex flex-col justify-center items-center gap-1">
+                    {leaderboard.map((value: { address: string, points: number; }, i: number) => {
+                      return (
+                        <li
+                          key={i}
+                          onClick={() => setTarget(value.address)}
+                          className="w-full h-auto px-2 py-1 rounded-md bg-gray-800/60 hover:bg-gray-800/75 cursor-pointer"
+                        >
+                          {value.address}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <input
+                    type="number"
+                    value={bountyAmount}
+                    min={0.1}
+                    max={5}
+                    step={0.1}
+                    onChange={(event) => setBountyAmount(parseFloat(event.target.value))}
+                    className="text-black bg-transparent border border-black p-2 rounded-lg"
+                  />
+                  <BasicButton onClick={createBounty} text="Place Bounty" />
+                </div>
+              </div>
+            }
           </>
           :
           <></>

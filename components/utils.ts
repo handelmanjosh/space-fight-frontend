@@ -204,7 +204,6 @@ export async function updateNFT(nft: string, newMetadata: NFTMetadata): Promise<
             // let newSocket = io('http://localhost:4000', {
             autoConnect: false,
         });
-        socket.connect();
         console.log(socket);
         socket.on('connect', () => {
             console.log(`connected: ${socket.id}`);
@@ -214,6 +213,23 @@ export async function updateNFT(nft: string, newMetadata: NFTMetadata): Promise<
             socket.disconnect();
             resolve(undefined);
         });
+        socket.connect();
+    });
+}
+export async function createNFT(account: string, metadata: NFTMetadata) {
+    return new Promise((resolve, reject) => {
+        const socket = io(process.env.NEXT_PUBLIC_BACKEND_URL!, {
+            autoConnect: false
+        });
+        socket.on('connect', () => {
+            console.log(`connected: ${socket.id}`);
+            socket.emit("createNFT", { account, metadata });
+        });
+        socket.on("createNFT", () => {
+            socket.disconnect();
+            resolve(undefined);
+        });
+        socket.connect();
     });
 }
 export async function swapSOL(userAddress: string, amount: number, signTransaction: (...any: any[]) => any) {

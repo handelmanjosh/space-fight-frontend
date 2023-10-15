@@ -59,10 +59,12 @@ export default function Shop() {
 
         // @ts-ignore
         metadata[key] = value;
-        metadata.image = metadata.level < 2 ? "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-normal.png" :
-            metadata.level < 5 ? "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-green.png" :
-                metadata.level < 10 ? "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-blue.png" :
-                    "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-yellow.png";
+        // if is custom image, keep it, else upgrade
+        metadata.image = !metadata.image.includes("spaceship") ? metadata.image :
+            metadata.level < 2 ? "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-normal.png" :
+                metadata.level < 5 ? "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-green.png" :
+                    metadata.level < 10 ? "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-blue.png" :
+                        "https://ai-crypto-app-6969696969.s3.amazonaws.com/spaceship-yellow.png";
         setIsLoading(true);
         updateNFT(nft, metadata).then(() => {
             setIsLoading(false);
@@ -81,6 +83,7 @@ export default function Shop() {
                     <p className="text-2xl">Shop</p>
                     <BasicButton onClick={() => window.location.href = "/"} text="Play" />
                     <BasicButton onClick={() => window.location.href = "/how-to-play"} text="How to Play" />
+                    <BasicButton onClick={() => window.location.href = "/create"} text="Create NFT" />
                 </div>
                 <div className="flex flex-row justify-center items-center gap-2">
                     <WalletMultiButtonDynamic />
