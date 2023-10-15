@@ -95,6 +95,7 @@ export default function SpaceFightPage() {
       if (socket) {
         socket.disconnect();
       }
+      console.log(process.env.NEXT_PUBLIC_BACKEND_URL!);
       socket = io(process.env.NEXT_PUBLIC_BACKEND_URL!, {
         // let newSocket = io('http://localhost:4000', {
         auth: {
