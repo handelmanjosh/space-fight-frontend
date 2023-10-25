@@ -14,7 +14,7 @@ const WalletMultiButtonDynamic = dynamic(
   async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
   { ssr: false }
 );
-let socket: Socket;
+let socket: Socket; // blah
 let canvas: HTMLCanvasElement;
 let context: CanvasRenderingContext2D;
 let mousePos: [number, number] | undefined;
