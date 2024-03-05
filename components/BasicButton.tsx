@@ -12,3 +12,4 @@ export default function BasicButton({ text, onClick }: BasicButtonProps) {
         </div>
     );
 }
+// lamo
