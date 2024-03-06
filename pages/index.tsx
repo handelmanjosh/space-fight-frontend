@@ -330,7 +330,6 @@ export default function SpaceFightPage() {
   };
   const drawPlayer = (x: number, y: number, angle: number, width: number, height: number, imgSrc: string, grapplePressed: boolean, grapplePosition: [number, number], health: number) => {
     const img = imageMap.get(imgSrc);
-
     if (grapplePressed) {
       context.strokeStyle = "white";
       context.lineWidth = 5;
@@ -345,13 +344,17 @@ export default function SpaceFightPage() {
       context.fillStyle = 'red';
       context.fill();
     }
-
+    try {
+      context.save();
+      context.translate(canvas.width / 2, canvas.height / 2);
+      context.rotate(angle);
+      context.drawImage(img!, -1 * width / 2, -1 * height / 2, width, height);
+      context.restore();
+    } catch (e) {
+      console.error(e);
+      console.log({ imgSrc, src: img!.src });
+    }
     //translate and draw image
-    context.save();
-    context.translate(canvas.width / 2, canvas.height / 2);
-    context.rotate(angle);
-    context.drawImage(img!, -1 * width / 2, -1 * height / 2, width, height);
-    context.restore();
 
     //draw circle
     context.beginPath();
